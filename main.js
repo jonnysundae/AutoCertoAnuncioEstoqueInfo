@@ -1,47 +1,50 @@
-function selecionarECopiar(){
-    const table = document.getElementById('table');
-    if (table) {
+window.onload = function () {
+
+    setTimeout(function() {
+        const table = document.getElementById('table');
         const rows = table.querySelectorAll('tr');
-        if (rows.length > 0) {
-            const allRowData = Array.from(rows).map((row) => {
-                const cells = row.querySelectorAll('td');
-                const relevantCellIndices = [2, 3, 4, 8]; // Índices das células relevantes (3, 4, 5 e 9)
-                const rowData = relevantCellIndices.map((index) => {
-                    if (index === 2) {
-                        const cellHTML = cells[index].innerHTML;
-                        const parser = new DOMParser();
-                        const cellDocument = parser.parseFromString(cellHTML, 'text/html');
-                        const carName = cellDocument.querySelector('a').textContent.trim().split('-')[0];
-                        
-                        const placaElement = cellDocument.querySelector('h6');
-                        const placaOnly = placaElement ? placaElement.textContent.trim().split(' ')[1].slice(0, -1) : 'N/A';
-                        
-                        const modeloText = cellDocument.body.textContent.trim();
-                        const anoCarro = modeloText.split('-')[1].trim().substring(0, 9);
-                        const modeloCarro = modeloText.slice(165, -895);
-                        
-                        return `${carName.split(' ')[0]}|${carName.split(' ')[1]} ${modeloCarro}|${placaOnly}|${anoCarro}`;
-                    } else {
-                        const button = cells[index].querySelector('button');
-                        const buttonText = button ? button.textContent.replace(/\s/g, "") : 'N/A';
-                        return buttonText;
-                    }
-                });
-                
-                return rowData.join('|');
-            });
-            
-            var lista = allRowData.join('\n')
-            console.log(lista); // Exibe todas as linhas separadas por quebra de linha
-            copyToClipboard(lista);
-        } else {
-            console.log('A tabela não possui nenhuma linha.');
+        let listagemCarros = [];
+
+    var controleHTML = document.getElementsByClassName("opcoesHeaderV2")[0];
+    var novoBotaoHTML = document.createElement('li');
+    novoBotaoHTML.classList.add("dropdown");
+    novoBotaoHTML.innerHTML = `<a href="" role="button" data-toggle="modal" class="btn btn-sm blue melhoriasSistema" data-id="1" style="margin-top: 15px;color: #FFF;padding: 4px 10px;margin-right: 10px;background-color: #28aef6;text-transform: none;">Copiar</a>`;
+    controleHTML.appendChild(novoBotaoHTML);
+    novoBotaoHTML.onclick = function () {
+    console.log(listagemCarros.join('\n'));
+
+        for (let posicao = 0; posicao < rows.length; posicao++) {
+            const carro = new Object();
+            carro.marca = limparTexto(rows[posicao].children[2].children[0]).split('-')[0].slice(0, -1).split(" ")[0];
+            marcaLengthNome = limparTexto(rows[posicao].children[2].children[0]).split('-')[0].slice(0, -1).split(" ")[0].length;
+            carro.nome = limparTexto(rows[posicao].children[2].children[0]).split('-')[0].slice(marcaLengthNome);
+            carro.ano = limparTexto(rows[posicao].children[2].children[0]).split("-")[1].slice(1,10);
+            carro.modelo = limparTexto(rows[posicao].children[2]).split(carro.ano)[1].split('Placa')[0];
+            carro.placa = rows[posicao].children[2].children[3].textContent.replace(/[ ]/g, '').replace(/\n/g, '').slice(6,14);
+            // INFO WEBMOTORS
+            carro.webMotors = limparTexto(rows[posicao].children[3],'classificado');
+            // INFO ICARROS
+            carro.iCarros = limparTexto(rows[posicao].children[4],'classificado');
+            // INFO MOBIAUTO
+            carro.mobiauto = limparTexto(rows[posicao].children[7],'classificado');
+        
+            listagemCarros.push(`${carro.marca}\t${carro.nome}${carro.modelo}\t${carro.placa}\t${carro.ano}\t${carro.webMotors}\t${carro.iCarros}\t${carro.mobiauto}`);
         }
-    } else {
-        console.log('A tabela com o ID "table" não foi encontrada.');
+
+        copyToClipboard(listagemCarros.join('\n'));
+    };
+}, 2000);
+}
+
+function limparTexto(texto, tipo){
+    if (tipo == 'classificado'){
+        return texto.textContent.replace(/ /g, '').replace(/\n/g, '').replace("Cliqueparaveroanúncio", '');
+    }else{
+        return texto.textContent.replace(/  /g, '').replace(/\n/g, '');
     }
 }
 
+// CopyToClipboard retirado do StackOverFlow: refazer esse código por conta propria!
 function copyToClipboard(text) {
     var tempInput = document.createElement('textarea');
     tempInput.value = text;
@@ -51,13 +54,3 @@ function copyToClipboard(text) {
     document.body.removeChild(tempInput);
     console.log('Texto copiado via botão');
 }
-
-controleHTML = document.getElementsByClassName("controls")[0];
-novoBotaoHTML = document.createElement('div');
-novoBotaoHTML.classList.add("btn-group");
-novoBotaoHTML.classList.add("btn-group-solid");
-novoBotaoHTML.innerHTML = `
-    <button type="button" onclick="selecionarECopiar()" class="btn dark dropdown-toggle" style="margin-bottom: 5px; height: 34px;padding: 4px 14px 7px" data-toggle="dropdown" aria-expanded="false">
-        Copiar
-    </button>`;
-controleHTML.appendChild(novoBotaoHTML);
